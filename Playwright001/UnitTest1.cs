@@ -45,7 +45,7 @@ namespace Playwright001
            
             test = extent.CreateTest("Test case 001");
 
-            await _page.GotoAsync("https://www.amazon.com/");
+            await _page.GotoAsync(MyResource.AmzUrl);
             test.Log(Status.Pass, "Navigated to the URL");
             await _page.ClickAsync("//input[@data-action-type='DISMISS']");
             test.Log(Status.Pass, "Click on the dismiss button");
@@ -58,7 +58,7 @@ namespace Playwright001
             test = extent.CreateTest("Test case 002");
             // await page.GotoAsync("https://www.amazon.com/");
 
-            await _page.GotoAsync("https://demoqa.com/webtables");
+            await _page.GotoAsync(MyResource.DemoQA);
             test.Log(Status.Pass, "Navigated to the URL");
             var excelData= _utilities.GetExcelData();
             test.Log(Status.Pass, "Get the Excel data sucessfully");
