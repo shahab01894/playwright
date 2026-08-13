@@ -92,6 +92,12 @@ namespace Playwright001
         [TearDown]
         public async Task Teardown()
         {
+            // Capture a screenshot only when the test that just ran failed.
+            if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Failed)
+            {
+                string fileName = $"failure-{TestContext.CurrentContext.Test.Name}.png";
+                await _page.ScreenshotAsync(new PageScreenshotOptions { Path = fileName });
+            }
             if (_context != null)
                 await _context.CloseAsync();
 
