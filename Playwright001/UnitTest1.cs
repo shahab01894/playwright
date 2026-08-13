@@ -24,7 +24,7 @@ namespace Playwright001
             _playwright = await Playwright.CreateAsync();
             _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
             {
-                Headless = false,
+                Headless = true,
                 SlowMo = 50,
                 Timeout = 80000
             });
