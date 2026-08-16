@@ -1,4 +1,3 @@
-
 trigger:
   branches:
     include:
@@ -39,41 +38,76 @@ steps:
     pwsh Playwright001/bin/Debug/net10.0/playwright.ps1 --version
   displayName: 'Verify Playwright installation'
 
-# FIXED: Generate test reports with proper output
+# Run tests and ensure Extent Report is generated
 - script: |
-    # Create Reports directory if it doesn't exist
+    echo "=== RUNNING TESTS WITH EXTENT REPORT ==="
+    
+    # Ensure Reports directory exists with proper permissions
     mkdir -p Playwright001/Reports
+    chmod 777 Playwright001/Reports
     
-    # Run tests with HTML and TRX report generation
+    # Clean any old reports
+    rm -rf Playwright001/Reports/*.html
+    rm -rf Playwright001/Reports/*.json
+    
+    # Run tests - Extent Report will generate automatically
     dotnet test --no-build \
-      --logger "trx;LogFileName=test_results.trx" \
-      --logger "html;LogFileName=test_results.html" \
-      --results-directory Playwright001/Reports \
-      --verbosity normal
+      --verbosity normal \
+      --logger "console;verbosity=detailed"
     
-    # List contents to verify reports were generated
+    # Check if Extent Report was generated
+    echo "=== CHECKING FOR EXTENT REPORTS ==="
+    find . -name "*.html" -type f | grep -i extent || echo "No Extent HTML found"
+    find . -name "Extent*.html" -type f || echo "No Extent HTML found"
+    find . -name "index.html" -type f || echo "No index.html found"
+    
+    # Check Reports directory
+    echo "=== CONTENTS OF Reports DIRECTORY ==="
+    ls -la Playwright001/Reports/ || echo "Reports directory is empty"
+    
+    # Also check if Extent Report is in the output directory
+    echo "=== CONTENTS OF OUTPUT DIRECTORY ==="
+    ls -la Playwright001/bin/Debug/net10.0/ | grep -E "\.html|\.json" || echo "No HTML/JSON in output"
+    
+    # If report is in bin directory, copy it to Reports
+    echo "=== COPYING REPORTS FROM BIN TO REPORTS ==="
+    cp -v Playwright001/bin/Debug/net10.0/*.html Playwright001/Reports/ 2>/dev/null || echo "No HTML in bin"
+    cp -v Playwright001/bin/Debug/net10.0/extent*.html Playwright001/Reports/ 2>/dev/null || echo "No Extent HTML in bin"
+    
+    # Final check
+    echo "=== FINAL CONTENTS OF Reports DIRECTORY ==="
     ls -la Playwright001/Reports/
-  displayName: 'Run Tests and Generate Reports'
+    
+  displayName: 'Run Tests with Extent Report'
   continueOnError: true
 
-# Publish test results to Azure DevOps (this makes them visible in Tests tab)
+# Publish test results to Azure DevOps
 - task: PublishTestResults@2
   displayName: 'Publish Test Results to Azure DevOps'
   condition: succeededOrFailed()
   inputs:
     testResultsFormat: 'VSTest'
-    testResultsFiles: '**/test_results.trx'
-    searchFolder: '$(System.DefaultWorkingDirectory)/Playwright001/Reports'
+    testResultsFiles: '**/*.trx'
+    searchFolder: '$(System.DefaultWorkingDirectory)'
     mergeTestResults: true
     failTaskOnFailedTests: false
 
-# Publish HTML report as pipeline artifact
+# Publish Extent Report as HTML artifact
 - task: PublishPipelineArtifact@1
-  displayName: 'Publish HTML Test Report'
+  displayName: 'Publish Extent Report'
   condition: succeededOrFailed()
   inputs:
     targetPath: 'Playwright001/Reports'
-    artifact: 'Test-Report-$(Build.BuildId)'
+    artifact: 'Extent-Report-$(Build.BuildId)'
+    publishLocation: 'pipeline'
+
+# Also publish the entire bin directory to find where report is generated
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Bin Directory (Debug)'
+  condition: succeededOrFailed()
+  inputs:
+    targetPath: 'Playwright001/bin/Debug/net10.0'
+    artifact: 'Debug-Output-$(Build.BuildId)'
     publishLocation: 'pipeline'
 
 # Copy and publish failure screenshots
@@ -93,12 +127,3 @@ steps:
     targetPath: '$(Build.ArtifactStagingDirectory)/screenshots'
     artifactName: 'playwright-screenshots-$(Build.BuildId)'
     publishLocation: 'pipeline'
-
-# Optional: Publish as build summary for easy viewing
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Test Artifacts'
-  condition: succeededOrFailed()
-  inputs:
-    PathtoPublish: 'Playwright001/Reports'
-    ArtifactName: 'TestArtifacts'
-    publishLocation: 'Container'
