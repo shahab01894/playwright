@@ -12,6 +12,11 @@ pool:
   vmImage: 'ubuntu-22.04'
 
 steps:
+# ADD THIS CHECKOUT STEP WITH CLEAN OPTION ↓↓↓
+- checkout: self
+  clean: true
+  displayName: 'Checkout with clean workspace'
+
 - task: UseDotNet@2
   displayName: 'Setup .NET'
   inputs:
@@ -35,6 +40,7 @@ steps:
   displayName: 'Verify Playwright installation'
 
 - script: |
+    rm -rf Playwright001/Reports/* 2>/dev/null || true
     dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed"
   displayName: 'Test'
   continueOnError: true
