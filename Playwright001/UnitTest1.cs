@@ -47,8 +47,8 @@ namespace Playwright001
 
             await _page.GotoAsync(MyResource.AmzUrl);
             test.Log(Status.Pass, "Navigated to the URL");
-            await _page.ClickAsync("//input[@data-action-type='DISMISS']");
-            test.Log(Status.Pass, "Click on the dismiss button");
+           // await _page.ClickAsync("//input[@data-action-type='DISMISS']");
+           // test.Log(Status.Pass, "Click on the dismiss button");
         }
         [Test]
         public async Task DemoQA1()
