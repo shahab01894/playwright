@@ -43,7 +43,7 @@ namespace Playwright001
         {
 
 
-            test = extent.CreateTest("Test case 001");
+            test = extent.CreateTest("Test case 0001");
 
             await _page.GotoAsync(MyResource.AmzUrl);
             test.Log(Status.Pass, "Navigated to the URL");
