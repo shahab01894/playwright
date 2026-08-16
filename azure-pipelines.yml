@@ -1,0 +1,65 @@
+trigger:
+  branches:
+    include:
+      - master
+
+pr:
+  branches:
+    include:
+      - master
+
+pool:
+  vmImage: 'ubuntu-22.04'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Setup .NET'
+  inputs:
+    packageType: 'sdk'
+    version: '10.0.x'
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- script: dotnet restore
+  displayName: 'Restore dependencies'
+
+- script: dotnet build --no-restore
+  displayName: 'Build'
+
+- script: |
+    pwsh Playwright001/bin/Debug/net10.0/playwright.ps1 install --with-deps
+  displayName: 'Install Playwright browsers'
+
+- script: |
+    ls -la Playwright001/bin/Debug/net10.0/
+    pwsh Playwright001/bin/Debug/net10.0/playwright.ps1 --version
+  displayName: 'Verify Playwright installation'
+
+- script: |
+    dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed"
+  displayName: 'Test'
+  continueOnError: true
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Test Reports'
+  condition: succeededOrFailed()
+  inputs:
+    targetPath: 'Playwright001/Reports'
+    artifact: 'Test Results'
+    publishLocation: 'pipeline'
+
+- task: CopyFiles@2
+  displayName: 'Copy failure screenshots to staging'
+  condition: failed()
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: '**/failure-*.png'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/screenshots'
+    flattenFolders: true
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish failure screenshots'
+  condition: failed()
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/screenshots'
+    artifactName: 'playwright-screenshots'
+    publishLocation: 'pipeline'
