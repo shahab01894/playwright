@@ -1,3 +1,4 @@
+
 trigger:
   branches:
     include:
@@ -12,7 +13,6 @@ pool:
   vmImage: 'ubuntu-22.04'
 
 steps:
-# ADD THIS CHECKOUT STEP WITH CLEAN OPTION ↓↓↓
 - checkout: self
   clean: true
   displayName: 'Checkout with clean workspace'
@@ -39,20 +39,44 @@ steps:
     pwsh Playwright001/bin/Debug/net10.0/playwright.ps1 --version
   displayName: 'Verify Playwright installation'
 
+# FIXED: Generate test reports with proper output
 - script: |
-    rm -rf Playwright001/Reports/* 2>/dev/null || true
-    dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed"
-  displayName: 'Test'
+    # Create Reports directory if it doesn't exist
+    mkdir -p Playwright001/Reports
+    
+    # Run tests with HTML and TRX report generation
+    dotnet test --no-build \
+      --logger "trx;LogFileName=test_results.trx" \
+      --logger "html;LogFileName=test_results.html" \
+      --results-directory Playwright001/Reports \
+      --verbosity normal
+    
+    # List contents to verify reports were generated
+    ls -la Playwright001/Reports/
+  displayName: 'Run Tests and Generate Reports'
   continueOnError: true
 
+# Publish test results to Azure DevOps (this makes them visible in Tests tab)
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results to Azure DevOps'
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/test_results.trx'
+    searchFolder: '$(System.DefaultWorkingDirectory)/Playwright001/Reports'
+    mergeTestResults: true
+    failTaskOnFailedTests: false
+
+# Publish HTML report as pipeline artifact
 - task: PublishPipelineArtifact@1
-  displayName: 'Publish Test Reports'
+  displayName: 'Publish HTML Test Report'
   condition: succeededOrFailed()
   inputs:
     targetPath: 'Playwright001/Reports'
-    artifact: 'Test Results'
+    artifact: 'Test-Report-$(Build.BuildId)'
     publishLocation: 'pipeline'
 
+# Copy and publish failure screenshots
 - task: CopyFiles@2
   displayName: 'Copy failure screenshots to staging'
   condition: failed()
@@ -67,5 +91,14 @@ steps:
   condition: failed()
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/screenshots'
-    artifactName: 'playwright-screenshots'
+    artifactName: 'playwright-screenshots-$(Build.BuildId)'
     publishLocation: 'pipeline'
+
+# Optional: Publish as build summary for easy viewing
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Test Artifacts'
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: 'Playwright001/Reports'
+    ArtifactName: 'TestArtifacts'
+    publishLocation: 'Container'
