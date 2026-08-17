@@ -12,6 +12,15 @@ pool:
   vmImage: 'ubuntu-22.04'
 
 steps:
+- checkout: self
+  clean: true
+  displayName: 'Checkout latest commit'
+
+- script: |
+    echo "Building commit: $(Build.SourceVersion)"
+    git log -1 --pretty=format:"%h - %s (%an, %ar)"
+  displayName: 'Show commit info'
+
 - task: UseDotNet@2
   displayName: 'Setup .NET'
   inputs:
