@@ -44,18 +44,31 @@ steps:
   displayName: 'Verify Playwright installation'
 
 - script: |
-    dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed"
-  displayName: 'Test'
+    dotnet test --no-build --verbosity normal \
+      --logger "trx;LogFileName=test_results.trx" \
+      --logger "console;verbosity=detailed"
+  displayName: 'Run Playwright Tests'
   continueOnError: true
 
+# Publish structured TRX results to Tests tab
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results to Pipeline'
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFiles: '**/test_results.trx'
+    testResultsFormat: 'VSTest'
+    failTaskOnFailedTests: false
+
+# Publish HTML report as artifact
 - task: PublishPipelineArtifact@1
-  displayName: 'Publish Test Reports'
+  displayName: 'Publish HTML Test Report'
   condition: succeededOrFailed()
   inputs:
     targetPath: 'Playwright001/Reports/AutomationReport.html'
-    artifact: 'Test Results'
+    artifact: 'AutomationReport'
     publishLocation: 'pipeline'
 
+# Copy failure screenshots if tests fail
 - task: CopyFiles@2
   displayName: 'Copy failure screenshots to staging'
   condition: failed()
