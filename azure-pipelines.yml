@@ -52,7 +52,7 @@ steps:
   displayName: 'Publish Test Reports'
   condition: succeededOrFailed()
   inputs:
-    targetPath: 'Playwright001/Reports'
+    targetPath: 'Playwright001/Reports/AutomationReport.html'
     artifact: 'Test Results'
     publishLocation: 'pipeline'
 
