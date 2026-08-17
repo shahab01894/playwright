@@ -39,17 +39,31 @@ namespace Playwright001
         }
 
         [Test]
+        [Category("Positive")]
         public async Task Amazon()
         {
 
 
-            test = extent.CreateTest("Test case 0001");
+            test = extent.CreateTest("Test case 001");
 
             await _page.GotoAsync(MyResource.AmzUrl);
             test.Log(Status.Pass, "Navigated to the URL");
-           // await _page.ClickAsync("//input[@data-action-type='DISMISS']");
-           // test.Log(Status.Pass, "Click on the dismiss button");
+            await _page.ClickAsync("//input[@data-action-type='DISMISS']");
+             test.Log(Status.Pass, "Click on the dismiss button");
         }
+        [Test]
+        [Category("Negative")]
+        public async Task Amazon3()
+        {
+
+
+            test = extent.CreateTest("Test case 001");
+
+            await _page.GotoAsync(MyResource.AmzUrl);
+            test.Log(Status.Pass, "Navigated to the URL");
+           
+        }
+        [Category("Positive")]
         [Test]
         public async Task DemoQA1()
         {
